@@ -3,12 +3,10 @@
 import { motion } from 'framer-motion';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 import Navbar from '../components/Navbar';
-import { useRouter } from 'next/navigation';
 import { useSubscription } from '@/hooks/useSubscription';
 import { isCurrentOrIncludedPlan, type SubscriptionPlan } from '@/lib/subscription';
 
 export default function PricingPage() {
-  const router = useRouter();
   const { plan: userPlan, updatePlan, isAuthenticated } = useSubscription();
 
   const plans = [
@@ -87,7 +85,7 @@ export default function PricingPage() {
       window.open('https://buy.stripe.com/28EdRb3tuc894oS08j4sE00', '_blank');
     } else if (planKey === 'studio') {
       // Studio plan: Mailto link
-      window.location.href = 'mailto:support@cybersticker.com?subject=Studio Plan Inquiry';
+      window.open('mailto:support@cybersticker.com?subject=Studio Plan Inquiry', '_self');
     }
   };
 

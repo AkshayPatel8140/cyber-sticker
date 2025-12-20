@@ -3,33 +3,26 @@
 import { motion } from 'framer-motion';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const result = await signIn('google', { callbackUrl: '/' });
-      // signIn returns undefined on success (redirect happens), 
-      // or an object with error property on failure/cancellation
-      // If there's an error or user cancels, reset loading state
-      if (result) {
-        // result is truthy, meaning sign-in didn't succeed
-        if (result === false) {
-          // User cancelled the OAuth flow
-          setIsLoading(false);
-        } else if (typeof result === 'object' && 'error' in result && result.error) {
-          // Sign-in failed with an error
-          console.error('Sign in error:', result.error);
-          setIsLoading(false);
-        } else {
-          // Unexpected result, reset loading state to be safe
-          setIsLoading(false);
-        }
-      }
-      // On success (result is undefined), signIn redirects, 
-      // so we don't need to reset loading state
+      // In NextAuth v5, signIn returns void and redirects on success
+      // On error/cancellation, user is redirected back to signin page
+      await signIn('google', { callbackUrl: '/' });
+      
+      // If redirect doesn't happen immediately, reset loading after a delay
+      // This handles cases where OAuth is cancelled or fails
+      // Note: On successful redirect, component unmounts so timeout won't execute
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 3000);
     } catch (error) {
       console.error('Sign in error:', error);
       setIsLoading(false);
@@ -107,6 +100,19 @@ export default function SignInPage() {
           </a>
           .
         </p>
+
+        {/* Back to Home Button */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <motion.button
+            onClick={() => router.push('/')}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </motion.button>
+        </div>
       </motion.div>
     </div>
   );

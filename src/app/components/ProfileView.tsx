@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { User, Heart, Edit, ExternalLink, Plus, LogOut } from 'lucide-react';
+import { User, Heart, Edit, ExternalLink, Plus } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 

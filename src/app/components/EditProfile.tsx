@@ -188,7 +188,7 @@ export default function EditProfile({ user, onCancel, onSave }: EditProfileProps
           )}
         </div>
         <p className="text-xs text-gray-500 mb-3">
-          Add up to 5 social media links. They'll be displayed on your creator profile.
+          Add up to 5 social media links. They&apos;ll be displayed on your creator profile.
         </p>
         <div className="space-y-2">
           {socialLinks.map((link, index) => (

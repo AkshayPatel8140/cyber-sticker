@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import ProfileView from '../components/ProfileView';
 import EditProfile from '../components/EditProfile';
-import { motion } from 'framer-motion';
 import { useSubscription } from '@/hooks/useSubscription';
 
 export default function ProfilePage() {

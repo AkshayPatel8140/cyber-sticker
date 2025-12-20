@@ -57,7 +57,7 @@ export default function StickerClient({ stickers }: StickerClientProps) {
             className="mb-12 max-w-3xl"
           >
             <p className="text-gray-600 text-base leading-relaxed">
-              Every sticker comes with the exact prompt that created it. Skip the guesswork and learn directly from designs that caught the community's attention.
+              Every sticker comes with the exact prompt that created it. Skip the guesswork and learn directly from designs that caught the community&apos;s attention.
             </p>
           </motion.div>
 

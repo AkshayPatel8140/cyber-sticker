@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { 
-  getUserSubscriptionPlan, 
   setUserSubscriptionPlan,
   initializeUserSubscription,
   type SubscriptionPlan 
@@ -15,14 +14,19 @@ export function useSubscription() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (session?.user?.id) {
-      // Initialize subscription for user (defaults to free if new)
-      const userPlan = initializeUserSubscription(session.user.id);
-      setPlan(userPlan);
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
-    }
+    // Use requestAnimationFrame to defer state updates and avoid synchronous setState
+    const updateState = () => {
+      if (session?.user?.id) {
+        // Initialize subscription for user (defaults to free if new)
+        const userPlan = initializeUserSubscription(session.user.id);
+        setPlan(userPlan);
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
+      }
+    };
+    
+    requestAnimationFrame(updateState);
   }, [session?.user?.id]);
 
   const updatePlan = (newPlan: SubscriptionPlan) => {
