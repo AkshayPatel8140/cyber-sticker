@@ -4,15 +4,11 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Copy, Heart, Lock } from 'lucide-react';
 import { useState } from 'react';
+import { getStickerImageUrl } from '@/lib/image-url';
+import type { Sticker } from '../page';
 
 interface ArchiveCardProps {
-  sticker: {
-    id: number;
-    date: string;
-    title: string;
-    image_filename: string;
-    prompt_text: string;
-  };
+  sticker: Sticker;
   index: number;
   onCopy: () => void;
 }
@@ -29,22 +25,17 @@ const getMockArtist = (id: number) => {
   return artists[id % artists.length];
 };
 
-// Some cards are premium (for demo purposes)
-const isPremium = (id: number) => {
-  return id % 3 === 0; // Every 3rd card is premium
-};
-
 export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps) {
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(getMockLikes(sticker.id));
   const artist = getMockArtist(sticker.id);
-  const premium = isPremium(sticker.id);
+  const premium = sticker.is_premium;
 
   const handleCopy = async () => {
     if (premium) return; // Don't allow copying premium prompts
     try {
-      await navigator.clipboard.writeText(sticker.prompt_text);
+      await navigator.clipboard.writeText(sticker.prompt);
       setCopied(true);
       onCopy();
       setTimeout(() => setCopied(false), 2000);
@@ -128,7 +119,7 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
         />
         
         <Image
-          src={`/stickers/${sticker.image_filename}`}
+          src={getStickerImageUrl(sticker.image_url)}
           alt={sticker.title}
           fill
           className="object-cover select-none pointer-events-none"
@@ -179,7 +170,7 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
             <div className="space-y-3">
               {/* Prompt Text - Exactly 2 lines with ellipsis */}
               <p className="text-sm text-white line-clamp-2 leading-relaxed">
-                {truncateToTwoLines(sticker.prompt_text)}
+                {truncateToTwoLines(sticker.prompt)}
               </p>
               
               {/* Bottom Row: Copy Button and Artist */}

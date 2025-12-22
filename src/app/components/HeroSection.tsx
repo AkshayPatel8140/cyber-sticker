@@ -2,16 +2,16 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { getStickerImageUrl } from '@/lib/image-url';
+import type { Sticker } from '../page';
 
 interface HeroSectionProps {
-  featuredSticker?: {
-    id: number;
-    title: string;
-    image_filename: string;
-  };
+  featuredSticker: Sticker | null;
 }
 
 export default function HeroSection({ featuredSticker }: HeroSectionProps) {
+  const router = useRouter();
 
   const handleExploreCollection = () => {
     // Scroll to the collection section on the same page
@@ -22,11 +22,8 @@ export default function HeroSection({ featuredSticker }: HeroSectionProps) {
   };
 
   const handleViewPricing = () => {
-    // Scroll to the pricing section on the same page
-    const pricingSection = document.getElementById('pricing');
-    if (pricingSection) {
-      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Navigate to the pricing page
+    router.push('/pricing');
   };
 
   return (
@@ -155,7 +152,7 @@ export default function HeroSection({ featuredSticker }: HeroSectionProps) {
                 >
                   <div className="relative aspect-square w-full bg-gray-50">
                     <Image
-                      src={`/stickers/${featuredSticker.image_filename}`}
+                      src={getStickerImageUrl(featuredSticker.image_url)}
                       alt={featuredSticker.title}
                       fill
                       className="object-contain p-8"

@@ -2,20 +2,32 @@
 
 import { motion } from 'framer-motion';
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [callbackUrl, setCallbackUrl] = useState('/');
   const router = useRouter();
+
+  // Read callbackUrl from URL parameters safely on client-side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCallback = urlParams.get('callbackUrl');
+      if (urlCallback) {
+        setCallbackUrl(decodeURIComponent(urlCallback));
+      }
+    }
+  }, []);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
       // In NextAuth v5, signIn returns void and redirects on success
       // On error/cancellation, user is redirected back to signin page
-      await signIn('google', { callbackUrl: '/' });
+      await signIn('google', { callbackUrl });
       
       // If redirect doesn't happen immediately, reset loading after a delay
       // This handles cases where OAuth is cancelled or fails

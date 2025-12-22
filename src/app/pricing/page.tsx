@@ -2,12 +2,18 @@
 
 import { motion } from 'framer-motion';
 import { Check, Star, Zap, Crown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
+import Toast from '../components/Toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { isCurrentOrIncludedPlan, type SubscriptionPlan } from '@/lib/subscription';
 
 export default function PricingPage() {
-  const { plan: userPlan, updatePlan, isAuthenticated } = useSubscription();
+  const router = useRouter();
+  const { plan: userPlan, updatePlan, isAuthenticated, isLoading: subscriptionLoading } = useSubscription();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const plans = [
     {
@@ -71,17 +77,59 @@ export default function PricingPage() {
     },
   ];
 
+  // Handle redirect after sign-in with plan parameter
+  useEffect(() => {
+    if (subscriptionLoading || typeof window === 'undefined') return; // Wait for subscription data to load and ensure client-side
+    
+    // Read plan parameter from URL safely
+    const urlParams = new URLSearchParams(window.location.search);
+    const planParam = urlParams.get('plan');
+    
+    if (planParam && isAuthenticated) {
+      // User just signed in and returned with a plan parameter
+      const targetPlan = planParam as SubscriptionPlan;
+      
+      // Check if user already has premium
+      if (targetPlan === 'pro' && (userPlan === 'pro' || userPlan === 'studio')) {
+        // User already has Pro or Studio
+        const message = userPlan === 'studio' 
+          ? 'You already have Studio plan (includes Pro)!'
+          : 'You already have a Pro subscription!';
+        setToastMessage(message);
+        setShowToast(true);
+        // Clear URL parameters
+        router.replace('/pricing');
+        setTimeout(() => setShowToast(false), 4000);
+      } else if (targetPlan === 'pro' && userPlan === 'free') {
+        // User is free, proceed to Stripe checkout
+        window.open('https://buy.stripe.com/28EdRb3tuc894oS08j4sE00', '_blank');
+        // Clear URL parameters
+        router.replace('/pricing');
+      }
+    }
+  }, [isAuthenticated, userPlan, router, subscriptionLoading]);
+
   const handleSubscribe = (planName: string, planKey: SubscriptionPlan) => {
     // Check if this is the current plan or already included
     if (isCurrentOrIncludedPlan(userPlan, planKey)) {
       return; // Don't allow subscribing to current/included plan
     }
 
+    // For paid plans, require authentication
+    if (planKey === 'pro' || planKey === 'studio') {
+      if (!isAuthenticated) {
+        // Redirect to sign-in with callback URL and plan parameter
+        const callbackUrl = encodeURIComponent(`/pricing?plan=${planKey}`);
+        router.push(`/signin?callbackUrl=${callbackUrl}`);
+        return;
+      }
+    }
+
     // Handle different plans
     if (planKey === 'free') {
       updatePlan('free');
     } else if (planKey === 'pro') {
-      // Pro plan: Link to Stripe checkout
+      // Pro plan: Link to Stripe checkout (user is authenticated)
       window.open('https://buy.stripe.com/28EdRb3tuc894oS08j4sE00', '_blank');
     } else if (planKey === 'studio') {
       // Studio plan: Mailto link
@@ -182,16 +230,14 @@ export default function PricingPage() {
 
                   {/* CTA Button */}
                   {planItem.key === 'pro' && !isDisabled ? (
-                    <motion.a
-                      href="https://buy.stripe.com/28EdRb3tuc894oS08j4sE00"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <motion.button
+                      onClick={() => handleSubscribe(planItem.name, planItem.key)}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700 text-center block"
+                      className="w-full py-3 px-6 rounded-lg font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700 text-center"
                     >
                       {planItem.cta}
-                    </motion.a>
+                    </motion.button>
                   ) : (
                     <motion.button
                       onClick={() => !isDisabled && handleSubscribe(planItem.name, planItem.key)}
@@ -281,6 +327,7 @@ export default function PricingPage() {
           </motion.div>
         </div>
       </div>
+      <Toast show={showToast} message={toastMessage} />
     </div>
   );
 }

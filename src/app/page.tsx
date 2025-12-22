@@ -1,26 +1,86 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import StickerClient from './components/StickerClient';
+import { supabase } from '@/lib/supabase';
 
-interface Sticker {
+export interface Sticker {
   id: number;
-  date: string;
   title: string;
-  image_filename: string;
-  prompt_text: string;
-  remix_tip?: string;
+  prompt: string;
+  image_url: string;
+  publish_date: string;
+  is_premium: boolean;
 }
 
-function getStickers(): Sticker[] {
-  const filePath = join(process.cwd(), 'src', 'data.json');
-  const fileContents = readFileSync(filePath, 'utf8');
-  return JSON.parse(fileContents);
+/**
+ * Fetches the sticker for today's date
+ * Falls back to the latest sticker if no sticker exists for today
+ */
+async function getTodaySticker(): Promise<Sticker | null> {
+  try {
+    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+    // First, try to get sticker for today
+    const { data: todaySticker, error: todayError } = await supabase
+      .from('stickers')
+      .select('*')
+      .eq('publish_date', today)
+      .single();
+
+    if (!todayError && todaySticker) {
+      return todaySticker;
+    }
+
+    // If no sticker for today, get the latest sticker
+    const { data: latestSticker, error: latestError } = await supabase
+      .from('stickers')
+      .select('*')
+      .order('publish_date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (latestError || !latestSticker) {
+      console.error('Error fetching latest sticker:', latestError);
+      return null;
+    }
+
+    return latestSticker;
+  } catch (error) {
+    console.error('Error in getTodaySticker:', error);
+    return null;
+  }
 }
 
-export default function Home() {
-  const stickers = getStickers();
+/**
+ * Fetches all stickers for the archive grid, ordered by date (newest first)
+ */
+async function getAllStickers(): Promise<Sticker[]> {
+  try {
+    const { data, error } = await supabase
+      .from('stickers')
+      .select('*')
+      .order('publish_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching stickers:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAllStickers:', error);
+    return [];
+  }
+}
+
+export default async function Home() {
+  const [todaySticker, allStickers] = await Promise.all([
+    getTodaySticker(),
+    getAllStickers(),
+  ]);
 
   return (
-    <StickerClient stickers={stickers} />
+    <StickerClient 
+      featuredSticker={todaySticker} 
+      allStickers={allStickers} 
+    />
   );
 }
