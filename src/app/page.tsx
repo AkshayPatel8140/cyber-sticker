@@ -71,6 +71,8 @@ async function getAllStickers(): Promise<Sticker[]> {
   }
 }
 
+export const revalidate = 300; // Revalidate every 60 seconds
+
 export default async function Home() {
   const [todaySticker, allStickers] = await Promise.all([
     getTodaySticker(),

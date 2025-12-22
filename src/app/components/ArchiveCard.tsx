@@ -163,7 +163,7 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
                 <Lock className="w-3 h-3 text-white" />
                 <span className="text-xs font-medium text-white">PREMIUM</span>
               </motion.button>
-              <span className="text-xs text-white/60">by {artist}</span>
+              {/* <span className="text-xs text-white/60">by {artist}</span> */}
             </div>
           ) : (
             // Free: Show prompt text (2 lines) and copy button
