@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import { useState, useRef } from 'react';
 import { User, X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import type { UserProfile } from '@/hooks/useUserProfile';
 
 interface EditProfileProps {
   user: {
@@ -11,16 +13,18 @@ interface EditProfileProps {
     email?: string | null;
     image?: string | null;
   };
+  profile: UserProfile | null;
   onCancel: () => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
 }
 
-export default function EditProfile({ user, onCancel, onSave }: EditProfileProps) {
-  const [displayName, setDisplayName] = useState(user.name || '');
-  const [title, setTitle] = useState('');
-  const [bio, setBio] = useState('');
-  const [avatar, setAvatar] = useState(user.image || '');
-  const [socialLinks, setSocialLinks] = useState<string[]>([]);
+export default function EditProfile({ user, profile, onCancel, onSave }: EditProfileProps) {
+  const [displayName, setDisplayName] = useState(profile?.display_name || user.name || '');
+  const [title, setTitle] = useState(profile?.title || '');
+  const [bio, setBio] = useState(profile?.bio || '');
+  const [avatar, setAvatar] = useState(profile?.avatar_url || user.image || '');
+  const [socialLinks, setSocialLinks] = useState<string[]>(profile?.social_links || []);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,10 +42,38 @@ export default function EditProfile({ user, onCancel, onSave }: EditProfileProps
     }
   };
 
-  const handleSave = () => {
-    // Here you would save to your database/API
-    console.log('Saving profile:', { displayName, title, bio, avatar, socialLinks });
-    onSave();
+  const handleSave = async () => {
+    if (!user.id) return;
+
+    setIsSaving(true);
+    try {
+      const payload = {
+        user_id: user.id,
+        email: user.email ?? null,
+        display_name: displayName || null,
+        title: title || null,
+        bio: bio || null,
+        avatar_url: avatar || null,
+        social_links: socialLinks,
+      };
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert(payload, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('Error saving profile:', error);
+        alert('Failed to save profile. Please try again.');
+        return;
+      }
+
+      await onSave();
+    } catch (err) {
+      console.error('Unexpected error saving profile:', err);
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const addSocialLink = () => {
@@ -216,11 +248,12 @@ export default function EditProfile({ user, onCancel, onSave }: EditProfileProps
       <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
         <motion.button
           onClick={handleSave}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex-1 py-2.5 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
+          whileHover={!isSaving ? { scale: 1.02 } : {}}
+          whileTap={!isSaving ? { scale: 0.98 } : {}}
+          disabled={isSaving}
+          className="flex-1 py-2.5 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
         >
-          Save Changes
+          {isSaving ? 'Saving...' : 'Save Changes'}
         </motion.button>
         <motion.button
           onClick={onCancel}

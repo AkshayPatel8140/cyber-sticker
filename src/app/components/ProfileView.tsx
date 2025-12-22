@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Heart, Edit, ExternalLink, Plus } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import type { UserProfile } from '@/hooks/useUserProfile';
 
 interface ProfileViewProps {
   user: {
@@ -12,19 +13,33 @@ interface ProfileViewProps {
     email?: string | null;
     image?: string | null;
   };
+  profile: UserProfile | null;
   onEdit: () => void;
 }
 
-export default function ProfileView({ user, onEdit }: ProfileViewProps) {
+export default function ProfileView({ user, profile, onEdit }: ProfileViewProps) {
   const router = useRouter();
   
-  // Mock data - in a real app, this would come from a database
-  const memberSince = new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  });
-  const totalLikes = 0; // This would come from your database
+  const displayName = profile?.display_name || user.name || 'User';
+  const avatarUrl = profile?.avatar_url || user.image || null;
+
+  const memberSince = profile?.member_since
+    ? new Date(profile.member_since).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : '—';
+
+  const lastUpdated = profile?.last_updated_at
+    ? new Date(profile.last_updated_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : '—';
+
+  const totalLikes = 0; // Placeholder: would come from your database
 
   return (
     <motion.div
@@ -35,10 +50,10 @@ export default function ProfileView({ user, onEdit }: ProfileViewProps) {
     >
       {/* Signed In As Section */}
       <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
-        {user.image ? (
+        {avatarUrl ? (
           <img
-            src={user.image}
-            alt={user.name || 'User'}
+            src={avatarUrl}
+            alt={displayName}
             className="w-16 h-16 rounded-full border-2 border-gray-200"
           />
         ) : (
@@ -48,7 +63,7 @@ export default function ProfileView({ user, onEdit }: ProfileViewProps) {
         )}
         <div className="flex-1">
           <h2 className="text-xl font-bold text-gray-900 mb-1">
-            {user.name || 'User'}
+            {displayName}
           </h2>
           <p className="text-sm text-gray-600">
             {user.email}
@@ -64,7 +79,7 @@ export default function ProfileView({ user, onEdit }: ProfileViewProps) {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Last Update:</span>
-          <span className="text-sm font-medium text-gray-900">—</span>
+          <span className="text-sm font-medium text-gray-900">{lastUpdated}</span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

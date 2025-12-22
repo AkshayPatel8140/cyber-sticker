@@ -7,11 +7,13 @@ import Navbar from '../components/Navbar';
 import ProfileView from '../components/ProfileView';
 import EditProfile from '../components/EditProfile';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const { profile, isLoading: profileLoading, error: profileError, refresh } = useUserProfile();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -53,17 +55,41 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Main Content */}
             <div className="lg:col-span-2">
-              {isEditing ? (
-                <EditProfile 
-                  user={session.user} 
-                  onCancel={() => setIsEditing(false)}
-                  onSave={() => setIsEditing(false)}
-                />
+              {profileLoading ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-6 bg-gray-200 rounded w-1/3" />
+                    <div className="h-4 bg-gray-200 rounded w-full" />
+                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                    <div className="h-10 bg-gray-200 rounded" />
+                  </div>
+                </div>
+              ) : profileError ? (
+                <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+                  <p className="text-sm text-red-600">
+                    Failed to load profile. Please refresh the page.
+                  </p>
+                </div>
               ) : (
-                <ProfileView 
-                  user={session.user} 
-                  onEdit={() => setIsEditing(true)}
-                />
+                <>
+                  {isEditing ? (
+                    <EditProfile 
+                      user={session.user}
+                      profile={profile}
+                      onCancel={() => setIsEditing(false)}
+                      onSave={async () => {
+                        await refresh();
+                        setIsEditing(false);
+                      }}
+                    />
+                  ) : (
+                    <ProfileView 
+                      user={session.user}
+                      profile={profile}
+                      onEdit={() => setIsEditing(true)}
+                    />
+                  )}
+                </>
               )}
             </div>
 

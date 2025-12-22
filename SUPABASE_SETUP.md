@@ -42,7 +42,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-anon-key-here
 2. Navigate to **Settings** → **API**
 3. Copy:
    - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-   - **anon/public key** → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+   - **anon/public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## How It Works
 

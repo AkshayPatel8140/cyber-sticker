@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import { supabase } from '@/lib/supabase';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -15,10 +16,52 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
-    async jwt({ token, account }) {
-      if (account) {
-        token.accessToken = account.access_token;
+    async jwt({ token, account, profile }) {
+      // When user signs in for the first time (or re-authenticates),
+      // ensure we have a corresponding user profile row in Supabase.
+      if (account && token.sub) {
+        try {
+          const userId = token.sub;
+          const email =
+            (token.email as string | undefined) ??
+            (profile && typeof profile.email === 'string'
+              ? profile.email
+              : null);
+          const name =
+            (token.name as string | undefined) ??
+            (profile && typeof profile.name === 'string'
+              ? profile.name
+              : null);
+          const image =
+            (token.picture as string | undefined) ??
+            (profile && typeof (profile as any).picture === 'string'
+              ? (profile as any).picture
+              : null);
+
+          // Upsert into user_profiles based on user_id
+          const { error } = await supabase
+            .from('user_profiles')
+            .upsert(
+              {
+                user_id: userId,
+                email,
+                display_name: name,
+                avatar_url: image,
+              },
+              { onConflict: 'user_id' }
+            );
+
+          if (error) {
+            console.error('Error upserting user profile during auth:', error);
+          }
+
+          // Optional: attach access token for other uses
+          token.accessToken = account.access_token;
+        } catch (err) {
+          console.error('Unexpected error during auth profile sync:', err);
+        }
       }
+
       return token;
     },
   },
