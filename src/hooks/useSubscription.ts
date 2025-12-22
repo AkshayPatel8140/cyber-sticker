@@ -14,25 +14,34 @@ export function useSubscription() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Use requestAnimationFrame to defer state updates and avoid synchronous setState
-    const updateState = () => {
+    const loadSubscription = async () => {
       if (session?.user?.id) {
-        // Initialize subscription for user (defaults to free if new)
-        const userPlan = initializeUserSubscription(session.user.id);
-        setPlan(userPlan);
-        setIsLoading(false);
+        try {
+          // Initialize subscription for user (defaults to free if new)
+          const userPlan = await initializeUserSubscription(session.user.id);
+          setPlan(userPlan);
+        } catch (error) {
+          console.error('Error loading subscription:', error);
+          setPlan('free');
+        } finally {
+          setIsLoading(false);
+        }
       } else {
         setIsLoading(false);
       }
     };
-    
-    requestAnimationFrame(updateState);
+
+    loadSubscription();
   }, [session?.user?.id]);
 
-  const updatePlan = (newPlan: SubscriptionPlan) => {
+  const updatePlan = async (newPlan: SubscriptionPlan) => {
     if (session?.user?.id) {
-      setUserSubscriptionPlan(session.user.id, newPlan);
-      setPlan(newPlan);
+      try {
+        await setUserSubscriptionPlan(session.user.id, newPlan);
+        setPlan(newPlan);
+      } catch (error) {
+        console.error('Error updating subscription plan:', error);
+      }
     }
   };
 
