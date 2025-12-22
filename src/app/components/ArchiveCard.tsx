@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Copy, Heart, Lock } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getStickerImageUrl } from '@/lib/image-url';
 import type { Sticker } from '../page';
 
@@ -26,6 +27,7 @@ const getMockArtist = (id: number) => {
 };
 
 export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps) {
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(getMockLikes(sticker.id));
@@ -54,11 +56,8 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
   };
 
   const handleUnlockPro = () => {
-    // Smooth scroll to pricing section
-    const pricingSection = document.getElementById('pricing');
-    if (pricingSection) {
-      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Navigate to pricing page so users can choose their plan
+    router.push('/pricing');
   };
 
   // Prevent right-click and drag ONLY on image area
