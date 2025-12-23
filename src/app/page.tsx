@@ -11,38 +11,35 @@ export interface Sticker {
 }
 
 /**
- * Fetches the sticker for today's date
- * Falls back to the latest sticker if no sticker exists for today
+ * Fetches the latest sticker where publish_date is today or earlier
+ * Orders by publish_date DESC, id DESC to get the most recent sticker
+ * (handles multiple stickers per day by selecting the one with highest id)
  */
 async function getTodaySticker(): Promise<Sticker | null> {
   try {
     const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
-    // First, try to get sticker for today
-    const { data: todaySticker, error: todayError } = await supabase
-      .from('stickers')
-      .select('*')
-      .eq('publish_date', today)
-      .single();
-
-    if (!todayError && todaySticker) {
-      return todaySticker;
-    }
-
-    // If no sticker for today, get the latest sticker
+    // Get the latest sticker where publish_date <= today
+    // Order by publish_date DESC, then id DESC to handle multiple stickers per day
     const { data: latestSticker, error: latestError } = await supabase
       .from('stickers')
       .select('*')
+      .lte('publish_date', today)
       .order('publish_date', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1)
       .single();
 
-    if (latestError || !latestSticker) {
+    if (latestError) {
+      // PGRST116 means no rows found - this is expected if no stickers exist
+      if (latestError.code === 'PGRST116') {
+        return null;
+      }
       console.error('Error fetching latest sticker:', latestError);
       return null;
     }
 
-    return latestSticker;
+    return latestSticker || null;
   } catch (error) {
     console.error('Error in getTodaySticker:', error);
     return null;
