@@ -26,6 +26,12 @@ export default function HeroSection({ featuredSticker }: HeroSectionProps) {
     router.push('/pricing');
   };
 
+  const handleStickerClick = () => {
+    if (featuredSticker) {
+      router.push(`/sticker/${featuredSticker.id}`);
+    }
+  };
+
   return (
     <section className="relative pt-24 pb-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white via-gray-50/50 to-white overflow-hidden">
       {/* Subtle background decoration */}
@@ -148,7 +154,8 @@ export default function HeroSection({ featuredSticker }: HeroSectionProps) {
                 <motion.div
                   animate={{ y: [0, -10, 0] }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+                  className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-3xl transition-shadow"
+                  onClick={handleStickerClick}
                 >
                   <div className="relative aspect-square w-full bg-gray-50">
                     <Image

@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { signOut, useSession } from 'next-auth/react';
+import Image from 'next/image';
 import { User, LogOut, Settings } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -42,10 +43,13 @@ export default function ProfileMenu() {
         className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
       >
         {userImage ? (
-          <img
+          <Image
             src={userImage}
             alt={userName}
+            width={32}
+            height={32}
             className="w-8 h-8 rounded-full border-2 border-gray-200"
+            unoptimized
           />
         ) : (
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
@@ -87,7 +91,7 @@ export default function ProfileMenu() {
             
             <button
               onClick={() => {
-                signOut({ callbackUrl: '/signin' });
+                signOut({ callbackUrl: '/' });
                 setIsOpen(false);
               }}
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"

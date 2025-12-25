@@ -17,7 +17,10 @@ export default function SignInPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const urlCallback = urlParams.get('callbackUrl');
       if (urlCallback) {
-        setCallbackUrl(decodeURIComponent(urlCallback));
+        // Use setTimeout to avoid synchronous setState in effect
+        setTimeout(() => {
+          setCallbackUrl(decodeURIComponent(urlCallback));
+        }, 0);
       }
     }
   }, []);

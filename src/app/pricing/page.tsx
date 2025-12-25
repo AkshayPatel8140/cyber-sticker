@@ -95,11 +95,14 @@ export default function PricingPage() {
         const message = userPlan === 'studio' 
           ? 'You already have Studio plan (includes Pro)!'
           : 'You already have a Pro subscription!';
-        setToastMessage(message);
-        setShowToast(true);
+        // Use setTimeout to avoid synchronous setState in effect
+        setTimeout(() => {
+          setToastMessage(message);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 4000);
+        }, 0);
         // Clear URL parameters
         router.replace('/pricing');
-        setTimeout(() => setShowToast(false), 4000);
       } else if (targetPlan === 'pro' && userPlan === 'free') {
         // User is free, proceed to Stripe checkout
         window.open('https://buy.stripe.com/28EdRb3tuc894oS08j4sE00', '_blank');

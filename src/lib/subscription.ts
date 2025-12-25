@@ -56,13 +56,23 @@ export async function setUserSubscriptionPlan(userId: string, plan: Subscription
           });
 
         if (insertError) {
-          console.error('Error creating subscription plan:', insertError);
+          console.error('Error creating subscription plan:', {
+            message: insertError.message,
+            code: insertError.code,
+            details: insertError.details,
+            hint: insertError.hint,
+          });
           throw insertError;
         }
         return;
       } else {
         // Actual database error - don't proceed
-        console.error('Error checking for existing subscription:', checkError);
+        console.error('Error checking for existing subscription:', {
+          message: checkError.message,
+          code: checkError.code,
+          details: checkError.details,
+          hint: checkError.hint,
+        });
         throw checkError;
       }
     }
@@ -75,12 +85,28 @@ export async function setUserSubscriptionPlan(userId: string, plan: Subscription
         .eq('user_id', userId);
 
       if (updateError) {
-        console.error('Error updating subscription plan:', updateError);
+        console.error('Error updating subscription plan:', {
+          message: updateError.message,
+          code: updateError.code,
+          details: updateError.details,
+          hint: updateError.hint,
+        });
         throw updateError;
       }
     }
   } catch (error) {
-    console.error('Failed to save subscription plan:', error);
+    // Handle both Supabase errors and generic errors
+    if (error && typeof error === 'object' && 'message' in error) {
+      const supabaseError = error as { message?: string; code?: string; details?: string; hint?: string };
+      console.error('Failed to save subscription plan:', {
+        message: supabaseError.message,
+        code: supabaseError.code,
+        details: supabaseError.details,
+        hint: supabaseError.hint,
+      });
+    } else {
+      console.error('Failed to save subscription plan:', error);
+    }
     throw error;
   }
 }
@@ -109,7 +135,12 @@ export async function initializeUserSubscription(userId: string): Promise<Subscr
           await setUserSubscriptionPlan(userId, 'free');
         } else {
           // Actual database error - log and return free plan as fallback
-          console.error('Error checking for existing subscription during initialization:', checkError);
+          console.error('Error checking for existing subscription during initialization:', {
+            message: checkError.message,
+            code: checkError.code,
+            details: checkError.details,
+            hint: checkError.hint,
+          });
           return 'free';
         }
       } else if (!existing) {
@@ -120,7 +151,18 @@ export async function initializeUserSubscription(userId: string): Promise<Subscr
     
     return currentPlan;
   } catch (error) {
-    console.error('Error initializing subscription:', error);
+    // Handle both Supabase errors and generic errors
+    if (error && typeof error === 'object' && 'message' in error) {
+      const supabaseError = error as { message?: string; code?: string; details?: string; hint?: string };
+      console.error('Error initializing subscription:', {
+        message: supabaseError.message,
+        code: supabaseError.code,
+        details: supabaseError.details,
+        hint: supabaseError.hint,
+      });
+    } else {
+      console.error('Error initializing subscription:', error);
+    }
     return 'free';
   }
 }

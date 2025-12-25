@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { User, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { UserProfile } from '@/hooks/useUserProfile';
@@ -118,10 +119,13 @@ export default function EditProfile({ user, profile, onCancel, onSave }: EditPro
         <div className="flex items-center gap-4">
           <div className="relative">
             {avatar ? (
-              <img
+              <Image
                 src={avatar}
                 alt="Avatar"
+                width={80}
+                height={80}
                 className="w-20 h-20 rounded-full border-2 border-gray-200 object-cover"
+                unoptimized
               />
             ) : (
               <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">

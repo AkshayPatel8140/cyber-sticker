@@ -34,8 +34,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               : null);
           const image =
             (token.picture as string | undefined) ??
-            (profile && typeof (profile as any).picture === 'string'
-              ? (profile as any).picture
+            (profile && typeof profile === 'object' && profile !== null && 'picture' in profile && typeof profile.picture === 'string'
+              ? profile.picture
               : null);
 
           // Upsert into user_profiles based on user_id

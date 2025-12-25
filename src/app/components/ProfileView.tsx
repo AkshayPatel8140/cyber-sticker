@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { User, Heart, Edit, ExternalLink, Plus } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -51,10 +52,13 @@ export default function ProfileView({ user, profile, onEdit }: ProfileViewProps)
       {/* Signed In As Section */}
       <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
         {avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt={displayName}
+            width={64}
+            height={64}
             className="w-16 h-16 rounded-full border-2 border-gray-200"
+            unoptimized
           />
         ) : (
           <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
@@ -126,7 +130,7 @@ export default function ProfileView({ user, profile, onEdit }: ProfileViewProps)
       {/* Sign Out Button - Separate Row */}
       <div className="pt-2">
         <button
-          onClick={() => signOut({ callbackUrl: '/signin' })}
+          onClick={() => signOut({ callbackUrl: '/' })}
           className="w-full py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
           Sign out

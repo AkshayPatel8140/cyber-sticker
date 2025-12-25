@@ -21,17 +21,18 @@ const getMockLikes = (id: number) => {
 };
 
 // Generate mock artist (for demo purposes)
-const getMockArtist = (id: number) => {
-  const artists = ['@tariqHasanSyed', 'BKD', '@edferreirajr', '@_raffanascimento', '@hahibomarov', 'Gemini'];
-  return artists[id % artists.length];
-};
+// const getMockArtist = (id: number) => {
+//   const artists = ['@tariqHasanSyed', 'BKD', '@edferreirajr', '@_raffanascimento', '@hahibomarov', 'Gemini'];
+//   return artists[id % artists.length];
+// };
 
 export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(getMockLikes(sticker.id));
-  const artist = getMockArtist(sticker.id);
+  // Use this if you want to display the artist name
+  // const artist = getMockArtist(sticker.id);
   const premium = sticker.is_premium;
 
   const handleCopy = async () => {
@@ -58,6 +59,11 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
   const handleUnlockPro = () => {
     // Navigate to pricing page so users can choose their plan
     router.push('/pricing');
+  };
+
+  const handleCardClick = () => {
+    // Navigate to sticker detail page
+    router.push(`/sticker/${sticker.id}`);
   };
 
   // Prevent right-click and drag ONLY on image area
@@ -101,7 +107,8 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.03, duration: 0.5, ease: 'easeOut' }}
-      className="group relative bg-slate-900 rounded-xl overflow-hidden"
+      className="group relative bg-slate-900 rounded-xl overflow-hidden cursor-pointer"
+      onClick={handleCardClick}
     >
       {/* Image Container - Protected area ONLY */}
       <div 
@@ -112,7 +119,7 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
       >
         {/* Transparent overlay to prevent direct image interaction */}
         <div 
-          className="absolute inset-0 z-10 cursor-default"
+          className="absolute inset-0 z-10 cursor-pointer"
           onContextMenu={handleImageContextMenu}
           onDragStart={handleImageDragStart}
         />
@@ -138,7 +145,10 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
 
         {/* Like Button - Top Right (clickable) */}
         <motion.button
-          onClick={handleLike}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleLike();
+          }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 bg-black/60 backdrop-blur-sm rounded-full pointer-events-auto"
@@ -154,7 +164,10 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
             // Premium: Show Unlock (Pro) button
             <div className="flex items-center justify-between">
               <motion.button
-                onClick={handleUnlockPro}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUnlockPro();
+                }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center gap-1 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition-colors cursor-pointer"
@@ -175,7 +188,10 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
               {/* Bottom Row: Copy Button and Artist */}
               <div className="flex items-center justify-between">
                 <motion.button
-                  onClick={handleCopy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopy();
+                  }}
                   whileHover={{ opacity: 0.9 }}
                   whileTap={{ scale: 0.98 }}
                   className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm hover:bg-black/70 text-white rounded-full text-xs font-medium transition-colors"
@@ -184,9 +200,10 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
                   <span>{copied ? 'Copied' : 'Copy'}</span>
                 </motion.button>
 
-                <span className="text-xs text-white/60">
+                {/* Use this if you want to display the artist name */}
+                {/* <span className="text-xs text-white/60">
                   by {artist}
-                </span>
+                </span> */}
               </div>
             </div>
           )}
