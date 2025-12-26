@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import ProfileMenu from './ProfileMenu';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -25,15 +26,23 @@ export default function Navbar() {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200"
     >
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="max-w-7xl mx-auto px-3 py-4">
         <div className="flex items-center justify-between">
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-lg font-semibold text-gray-900 cursor-pointer"
+            // className="text-lg font-semibold text-gray-900 cursor-pointer"
+            className="text-lg font-semibold text-gray-900 cursor-pointer flex items-center gap-1"
             onClick={() => router.push('/')}
           >
+            <Image
+              src="/logos/logo3.png"
+              alt="CyberSticker Logo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
             CyberSticker
           </motion.h1>
           
