@@ -9,15 +9,20 @@ import ProfileMenu from './ProfileMenu';
 import { useSubscription } from '@/hooks/useSubscription';
 
 export default function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { plan } = useSubscription();
+  const { plan, isLoading } = useSubscription();
+  
+  // Only render conditional content after hydration and when session status is determined
+  // During SSR, sessionStatus is 'loading', so we wait until it's determined on the client
+  const isReady = sessionStatus !== 'loading' && !isLoading;
   
   // Show Subscribe button only if:
   // 1. Not on pricing page
   // 2. User has free plan (or not logged in)
-  const showSubscribeButton = pathname !== '/pricing' && plan === 'free';
+  // 3. Component is ready (session and subscription data loaded)
+  const showSubscribeButton = isReady && pathname !== '/pricing' && plan === 'free';
 
   return (
     <motion.nav
@@ -26,21 +31,20 @@ export default function Navbar() {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200"
     >
-      <div className="max-w-7xl mx-auto px-3 py-4">
+      <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            // className="text-lg font-semibold text-gray-900 cursor-pointer"
-            className="text-lg font-semibold text-gray-900 cursor-pointer flex items-center gap-1"
+            className="text-lg font-semibold text-gray-900 cursor-pointer flex items-center gap- 2"
             onClick={() => router.push('/')}
           >
             <Image
               src="/logos/logo3.png"
               alt="CyberSticker Logo"
-              width={40}
-              height={40}
+              width={50}
+              height={50}
               className="object-contain"
             />
             CyberSticker
@@ -61,9 +65,9 @@ export default function Navbar() {
               </motion.button>
             )}
             
-            {session ? (
+            {isReady && session ? (
               <ProfileMenu />
-            ) : (
+            ) : isReady ? (
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -75,7 +79,7 @@ export default function Navbar() {
               >
                 Sign in
               </motion.button>
-            )}
+            ) : null}
             
             <motion.button
               initial={{ opacity: 0 }}
