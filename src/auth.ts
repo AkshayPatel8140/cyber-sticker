@@ -38,12 +38,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               ? profile.picture
               : null);
 
-          // Upsert into user_profiles based on user_id
-          const result = await upsertUserProfile(userId, {
-            email,
+          // Upsert into user_profiles based on email (stable identifier)
+          // Pass userId for tracking, but email is the key to prevent duplicates
+          const result = await upsertUserProfile(email, {
             display_name: name,
             avatar_url: image,
-          });
+          }, userId);
 
           if (!result) {
             console.error('Error upserting user profile during auth');

@@ -26,8 +26,9 @@ export default async function StickerDetailPage({
   // Get user session and subscription
   const session = await auth();
   let userPlan: 'free' | 'pro' | 'studio' = 'free';
-  if (session?.user?.id) {
-    userPlan = await getUserSubscriptionPlan(session.user.id);
+  if (session?.user?.email) {
+    // Use email as the stable identifier for subscriptions
+    userPlan = await getUserSubscriptionPlan(session.user.email);
   }
 
   // Check if user can access premium content

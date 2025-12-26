@@ -19,21 +19,52 @@ export interface UserProfile {
 }
 
 /**
- * Fetches a user profile by user_id
+ * Fetches a user profile by email (preferred) or user_id (fallback)
+ * Email is the stable identifier that doesn't change across login sessions
  * 
- * @param userId - The user ID to fetch profile for
+ * @param identifier - Email (preferred) or user_id (fallback)
+ * @param useEmail - If true, treats identifier as email; if false, as user_id
  * @returns The user profile or null if not found
  */
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+export async function getUserProfile(
+  identifier: string,
+  useEmail: boolean = true
+): Promise<UserProfile | null> {
   try {
+    if (!identifier) {
+      return null;
+    }
+
+    // Use email as primary lookup (stable identifier)
+    if (useEmail) {
+      const { data, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('email', identifier)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching user profile by email:', fetchError);
+        return null;
+      }
+
+      if (data) {
+        return {
+          ...data,
+          social_links: Array.isArray(data.social_links) ? data.social_links : [],
+        } as UserProfile;
+      }
+    }
+
+    // Fallback to user_id lookup (for backward compatibility)
     const { data, error: fetchError } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('user_id', userId)
-      .single();
+      .eq('user_id', identifier)
+      .maybeSingle();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Error fetching user profile:', fetchError);
+      console.error('Error fetching user profile by user_id:', fetchError);
       return null;
     }
 
@@ -54,25 +85,46 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
 /**
  * Updates or creates a user profile (upsert operation)
- * If profile exists, it updates; if not, it creates a new one
+ * Uses email as the stable identifier to prevent duplicate profiles
  * 
- * @param userId - The user ID
+ * @param email - The user's email address (stable identifier)
  * @param profileData - Partial profile data to update/insert
+ * @param userId - Optional: current user_id for tracking (can be different each login)
  * @returns The updated/created profile or null on error
  */
 export async function upsertUserProfile(
-  userId: string,
-  profileData: Partial<UserProfile>
+  email: string | null | undefined,
+  profileData: Partial<UserProfile>,
+  userId?: string
 ): Promise<UserProfile | null> {
   try {
-    const payload = {
-      user_id: userId,
+    // Email is required for upsert
+    if (!email) {
+      console.error('Email is required to upsert user profile');
+      return null;
+    }
+
+    // Check if profile already exists by email
+    const { data: existing } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    const payload: Partial<UserProfile> = {
+      email,
       ...profileData,
     };
 
+    // Include user_id if provided (for tracking, but email is the key)
+    if (userId) {
+      payload.user_id = userId;
+    }
+
+    // Use email as the conflict key to prevent duplicates
     const { data, error } = await supabase
       .from('user_profiles')
-      .upsert(payload, { onConflict: 'user_id' })
+      .upsert(payload, { onConflict: 'email' })
       .select()
       .single();
 

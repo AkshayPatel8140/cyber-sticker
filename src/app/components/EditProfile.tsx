@@ -44,12 +44,15 @@ export default function EditProfile({ user, profile, onCancel, onSave }: EditPro
   };
 
   const handleSave = async () => {
-    if (!user.id) return;
+    // Email is required for upsert (stable identifier)
+    if (!user.email) {
+      alert('Email is required to save profile.');
+      return;
+    }
 
     setIsSaving(true);
     try {
       const profileData = {
-        email: user.email ?? null,
         display_name: displayName || null,
         title: title || null,
         bio: bio || null,
@@ -57,7 +60,8 @@ export default function EditProfile({ user, profile, onCancel, onSave }: EditPro
         social_links: socialLinks,
       };
 
-      const result = await upsertUserProfile(user.id, profileData);
+      // Use email as the key, pass user.id for tracking
+      const result = await upsertUserProfile(user.email, profileData, user.id);
 
       if (!result) {
         alert('Failed to save profile. Please try again.');

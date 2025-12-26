@@ -8,19 +8,24 @@ import { supabase } from '../supabase';
 export type SubscriptionPlan = 'free' | 'pro' | 'studio';
 
 /**
- * Get user's subscription plan from Supabase
+ * Get user's subscription plan from Supabase using email as the stable identifier
  * Defaults to 'free' for new users
  * 
- * @param userId - The user ID to fetch subscription for
+ * @param email - The user's email address (stable identifier)
  * @returns The user's subscription plan
  */
-export async function getUserSubscriptionPlan(userId: string): Promise<SubscriptionPlan> {
+export async function getUserSubscriptionPlan(email: string | null | undefined): Promise<SubscriptionPlan> {
   try {
+    // If no email provided, return free plan
+    if (!email) {
+      return 'free';
+    }
+
     const { data, error } = await supabase
       .from('user_subscriptions')
       .select('plan')
-      .eq('user_id', userId)
-      .single();
+      .eq('email', email)
+      .maybeSingle();
 
     if (error || !data) {
       // User doesn't have a subscription record yet, return free
@@ -35,71 +40,101 @@ export async function getUserSubscriptionPlan(userId: string): Promise<Subscript
 }
 
 /**
- * Set user's subscription plan in Supabase
+ * Set user's subscription plan in Supabase using email as the stable identifier
  * 
- * @param userId - The user ID
+ * @param email - The user's email address (stable identifier)
  * @param plan - The subscription plan to set
+ * @param userId - Optional: current user_id for tracking (can be different each login)
  */
-export async function setUserSubscriptionPlan(userId: string, plan: SubscriptionPlan): Promise<void> {
+export async function setUserSubscriptionPlan(
+  email: string | null | undefined,
+  plan: SubscriptionPlan,
+  userId?: string
+): Promise<void> {
   try {
-    // First, check if user already has a subscription record
+    // If no email provided, cannot create subscription
+    if (!email) {
+      throw new Error('Email is required to set subscription plan');
+    }
+
+    // First, check if user already has a subscription record by email
     const { data: existing, error: checkError } = await supabase
       .from('user_subscriptions')
       .select('id')
-      .eq('user_id', userId)
-      .single();
+      .eq('email', email)
+      .maybeSingle();
 
-    // Check if error is "no rows returned" (PGRST116) vs actual database error
-    if (checkError) {
-      // PGRST116 means no rows found - this is expected for new users
-      if (checkError.code === 'PGRST116') {
-        // No record exists, proceed with insert
-        const { error: insertError } = await supabase
-          .from('user_subscriptions')
-          .insert({
-            user_id: userId,
-            plan,
-            subscription_status: 'active',
-          });
-
-        if (insertError) {
-          console.error('Error creating subscription plan:', {
-            message: insertError.message,
-            code: insertError.code,
-            details: insertError.details,
-            hint: insertError.hint,
-          });
-          throw insertError;
-        }
-        return;
-      } else {
-        // Actual database error - don't proceed
-        console.error('Error checking for existing subscription:', {
-          message: checkError.message,
-          code: checkError.code,
-          details: checkError.details,
-          hint: checkError.hint,
-        });
-        throw checkError;
-      }
+    // Handle errors (PGRST116 means no rows found, which is expected for new users)
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking for existing subscription:', checkError);
+      throw checkError;
     }
 
-    // Record exists, update it
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('user_subscriptions')
-        .update({ plan, updated_at: new Date().toISOString() })
-        .eq('user_id', userId);
-
-      if (updateError) {
-        console.error('Error updating subscription plan:', {
-          message: updateError.message,
-          code: updateError.code,
-          details: updateError.details,
-          hint: updateError.hint,
-        });
-        throw updateError;
+    // If no record exists, create one
+    if (!existing) {
+      const insertData: {
+        email: string;
+        plan: SubscriptionPlan;
+        subscription_status: string;
+        user_id?: string;
+      } = {
+        email,
+        plan,
+        subscription_status: 'active',
+      };
+      
+      // Include user_id if provided (for tracking, but email is the key)
+      if (userId) {
+        insertData.user_id = userId;
       }
+
+      const { error: insertError } = await supabase
+        .from('user_subscriptions')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating subscription plan:', {
+          message: insertError.message,
+          code: insertError.code,
+          details: insertError.details,
+          hint: insertError.hint,
+        });
+        throw insertError;
+      }
+      
+      return;
+    }
+
+    // Record exists, update it by email
+    const updateData: {
+      plan: SubscriptionPlan;
+      updated_at: string;
+      user_id?: string;
+    } = {
+      plan,
+      updated_at: new Date().toISOString(),
+    };
+    
+    // Update user_id if provided (to track latest login)
+    if (userId) {
+      updateData.user_id = userId;
+    }
+
+    const { error: updateError } = await supabase
+      .from('user_subscriptions')
+      .update(updateData)
+      .eq('email', email);
+
+    if (updateError) {
+      console.error('Error updating subscription plan:', {
+        message: updateError.message,
+        code: updateError.code,
+        details: updateError.details,
+        hint: updateError.hint,
+      });
+      throw updateError;
     }
   } catch (error) {
     // Handle both Supabase errors and generic errors
@@ -120,46 +155,69 @@ export async function setUserSubscriptionPlan(userId: string, plan: Subscription
 
 /**
  * Initialize subscription plan for new user (defaults to free)
- * Creates a record if one doesn't exist
+ * Creates a record if one doesn't exist using email as the stable identifier
+ * Also updates user_id if provided to track the latest login session
  * 
- * @param userId - The user ID
+ * @param email - The user's email address (stable identifier)
+ * @param userId - Optional: current user_id for tracking
  * @returns The user's subscription plan
  */
-export async function initializeUserSubscription(userId: string): Promise<SubscriptionPlan> {
+export async function initializeUserSubscription(
+  email: string | null | undefined,
+  userId?: string
+): Promise<SubscriptionPlan> {
   try {
-    const currentPlan = await getUserSubscriptionPlan(userId);
-    
-    // If user doesn't have a record, create one with 'free' plan
-    if (currentPlan === 'free') {
-      const { data: existing, error: checkError } = await supabase
-        .from('user_subscriptions')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
-
-      // Check if error is "no rows returned" (PGRST116) vs actual database error
-      if (checkError) {
-        // PGRST116 means no rows found - this is expected for new users
-        if (checkError.code === 'PGRST116') {
-          // User is new, create free subscription record
-          await setUserSubscriptionPlan(userId, 'free');
-        } else {
-          // Actual database error - log and return free plan as fallback
-          console.error('Error checking for existing subscription during initialization:', {
-            message: checkError.message,
-            code: checkError.code,
-            details: checkError.details,
-            hint: checkError.hint,
-          });
-          return 'free';
-        }
-      } else if (!existing) {
-        // No error but no data (shouldn't happen, but handle gracefully)
-        await setUserSubscriptionPlan(userId, 'free');
-      }
+    // If no email provided, return free plan
+    if (!email) {
+      console.warn('initializeUserSubscription: No email provided');
+      return 'free';
     }
+
+    // First, check if a subscription record exists for this email
+    const { data: existing, error: checkError } = await supabase
+      .from('user_subscriptions')
+      .select('plan, user_id')
+      .eq('email', email)
+      .maybeSingle();
+
+    // Handle errors (PGRST116 means no rows found, which is expected for new users)
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking for existing subscription:', checkError);
+      return 'free';
+    }
+
+    // If record exists, update user_id if provided and different
+    if (existing && existing.plan) {
+      // Update user_id if provided and it's different from current
+      if (userId && existing.user_id !== userId) {
+        const { error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({ 
+            user_id: userId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', email);
+
+        if (updateError) {
+          console.error('Error updating user_id in subscription:', updateError);
+          // Don't fail - just log the error and return the plan
+        }
+      }
+      
+      return (existing.plan as SubscriptionPlan) || 'free';
+    }
+
+    // No record exists - create one with 'free' plan
+    await setUserSubscriptionPlan(email, 'free', userId);
     
-    return currentPlan;
+    // Verify it was created and return
+    const { data: created } = await supabase
+      .from('user_subscriptions')
+      .select('plan')
+      .eq('email', email)
+      .maybeSingle();
+    
+    return (created?.plan as SubscriptionPlan) || 'free';
   } catch (error) {
     // Handle both Supabase errors and generic errors
     if (error && typeof error === 'object' && 'message' in error) {

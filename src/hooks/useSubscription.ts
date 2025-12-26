@@ -15,10 +15,11 @@ export function useSubscription() {
 
   useEffect(() => {
     const loadSubscription = async () => {
-      if (session?.user?.id) {
+      if (session?.user?.email) {
         try {
-          // Initialize subscription for user (defaults to free if new)
-          const userPlan = await initializeUserSubscription(session.user.id);
+          // Initialize subscription for user using email (stable identifier)
+          // Pass user.id for tracking, but email is the key
+          const userPlan = await initializeUserSubscription(session.user.email, session.user.id);
           setPlan(userPlan);
         } catch (error) {
           console.error('Error loading subscription:', error);
@@ -32,12 +33,13 @@ export function useSubscription() {
     };
 
     loadSubscription();
-  }, [session?.user?.id]);
+  }, [session?.user?.email, session?.user?.id]);
 
   const updatePlan = async (newPlan: SubscriptionPlan) => {
-    if (session?.user?.id) {
+    if (session?.user?.email) {
       try {
-        await setUserSubscriptionPlan(session.user.id, newPlan);
+        // Use email as the stable identifier, pass user.id for tracking
+        await setUserSubscriptionPlan(session.user.email, newPlan, session.user.id);
         setPlan(newPlan);
       } catch (error) {
         console.error('Error updating subscription plan:', error);

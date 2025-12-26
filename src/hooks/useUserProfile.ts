@@ -21,7 +21,8 @@ export function useUserProfile(): UseUserProfileResult {
   const [error, setError] = useState<string | null>(null);
 
   const loadProfile = async () => {
-    if (!session?.user?.id) {
+    // Use email as the stable identifier (doesn't change across login sessions)
+    if (!session?.user?.email) {
       setProfile(null);
       setIsLoading(false);
       setError(null);
@@ -32,12 +33,13 @@ export function useUserProfile(): UseUserProfileResult {
     setError(null);
 
     try {
-      const profileData = await getUserProfile(session.user.id);
+      // Use email as primary lookup (stable identifier)
+      const profileData = await getUserProfile(session.user.email, true);
 
       if (!profileData) {
         // No profile yet, construct a default profile object (not saved until user edits)
         const defaultProfile: UserProfile = {
-          user_id: session.user.id,
+          user_id: session.user.id || '',
           email: session.user.email ?? null,
           display_name: session.user.name ?? null,
           title: null,
@@ -63,7 +65,7 @@ export function useUserProfile(): UseUserProfileResult {
   useEffect(() => {
     void loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id]);
+  }, [session?.user?.email]);
 
   return {
     profile,
