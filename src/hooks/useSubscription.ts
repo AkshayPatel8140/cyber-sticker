@@ -6,7 +6,7 @@ import {
   setUserSubscriptionPlan,
   initializeUserSubscription,
   type SubscriptionPlan 
-} from '@/lib/subscription';
+} from '@/lib/api/subscriptions';
 
 export function useSubscription() {
   const { data: session } = useSession();

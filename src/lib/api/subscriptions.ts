@@ -1,14 +1,18 @@
 /**
- * Subscription management utilities using Supabase
+ * Centralized Subscriptions API Service
+ * All subscription-related database operations should be handled here
  */
 
-import { supabase } from './supabase';
+import { supabase } from '../supabase';
 
 export type SubscriptionPlan = 'free' | 'pro' | 'studio';
 
 /**
  * Get user's subscription plan from Supabase
  * Defaults to 'free' for new users
+ * 
+ * @param userId - The user ID to fetch subscription for
+ * @returns The user's subscription plan
  */
 export async function getUserSubscriptionPlan(userId: string): Promise<SubscriptionPlan> {
   try {
@@ -32,6 +36,9 @@ export async function getUserSubscriptionPlan(userId: string): Promise<Subscript
 
 /**
  * Set user's subscription plan in Supabase
+ * 
+ * @param userId - The user ID
+ * @param plan - The subscription plan to set
  */
 export async function setUserSubscriptionPlan(userId: string, plan: SubscriptionPlan): Promise<void> {
   try {
@@ -114,6 +121,9 @@ export async function setUserSubscriptionPlan(userId: string, plan: Subscription
 /**
  * Initialize subscription plan for new user (defaults to free)
  * Creates a record if one doesn't exist
+ * 
+ * @param userId - The user ID
+ * @returns The user's subscription plan
  */
 export async function initializeUserSubscription(userId: string): Promise<SubscriptionPlan> {
   try {
@@ -171,6 +181,10 @@ export async function initializeUserSubscription(userId: string): Promise<Subscr
  * Check if user can access a plan (tier hierarchy)
  * Studio includes Pro and Free
  * Pro includes Free
+ * 
+ * @param userPlan - The user's current plan
+ * @param targetPlan - The plan to check access for
+ * @returns True if user can access the target plan
  */
 export function canAccessPlan(userPlan: SubscriptionPlan, targetPlan: SubscriptionPlan): boolean {
   if (targetPlan === 'free') return true; // Everyone can access free
@@ -181,6 +195,10 @@ export function canAccessPlan(userPlan: SubscriptionPlan, targetPlan: Subscripti
 
 /**
  * Check if plan is current plan or included in current plan
+ * 
+ * @param userPlan - The user's current plan
+ * @param targetPlan - The plan to check
+ * @returns True if target plan is included in user's plan
  */
 export function isCurrentOrIncludedPlan(userPlan: SubscriptionPlan, targetPlan: SubscriptionPlan): boolean {
   if (userPlan === 'studio') {
@@ -194,3 +212,4 @@ export function isCurrentOrIncludedPlan(userPlan: SubscriptionPlan, targetPlan: 
   // Free only includes Free
   return targetPlan === 'free';
 }
+

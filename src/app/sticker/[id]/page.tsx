@@ -6,7 +6,7 @@ import { getStickerById } from '@/lib/api/stickers';
 import type { Sticker } from '@/lib/api/stickers';
 import { getStickerImageUrl } from '@/lib/image-url';
 import { auth } from '@/auth';
-import { getUserSubscriptionPlan } from '@/lib/subscription';
+import { getUserSubscriptionPlan } from '@/lib/api/subscriptions';
 import Navbar from '../../components/Navbar';
 import CopyPromptButton from './CopyPromptButton';
 import LikeButton from './LikeButton';

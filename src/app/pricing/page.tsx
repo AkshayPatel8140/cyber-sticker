@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Toast from '../components/Toast';
 import { useSubscription } from '@/hooks/useSubscription';
-import { isCurrentOrIncludedPlan, type SubscriptionPlan } from '@/lib/subscription';
+import { isCurrentOrIncludedPlan, type SubscriptionPlan } from '@/lib/api/subscriptions';
 
 export default function PricingPage() {
   const router = useRouter();
