@@ -6,6 +6,7 @@ import { Copy, Heart, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getStickerImageUrl } from '@/lib/image-url';
+import { useLike } from '@/hooks/useLike';
 import type { Sticker } from '../page';
 
 interface ArchiveCardProps {
@@ -13,12 +14,6 @@ interface ArchiveCardProps {
   index: number;
   onCopy: () => void;
 }
-
-// Generate mock likes count (for demo purposes)
-const getMockLikes = (id: number) => {
-  const likes = [1000, 676, 658, 509, 408, 377, 363, 360, 310, 299, 280, 274];
-  return likes[id % likes.length] || Math.floor(Math.random() * 500) + 200;
-};
 
 // Generate mock artist (for demo purposes)
 // const getMockArtist = (id: number) => {
@@ -29,11 +24,16 @@ const getMockLikes = (id: number) => {
 export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(getMockLikes(sticker.id));
+  const premium = sticker.is_premium;
+  
+  // Use centralized like hook
+  const { likes: likeCount, liked, isLoading, handleLike, formatLikes } = useLike(
+    sticker.id,
+    sticker.likes || 0
+  );
+  
   // Use this if you want to display the artist name
   // const artist = getMockArtist(sticker.id);
-  const premium = sticker.is_premium;
 
   const handleCopy = async () => {
     if (premium) return; // Don't allow copying premium prompts
@@ -47,14 +47,6 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
     }
   };
 
-  const handleLike = () => {
-    if (liked) {
-      setLikeCount(prev => prev - 1);
-    } else {
-      setLikeCount(prev => prev + 1);
-    }
-    setLiked(!liked);
-  };
 
   const handleUnlockPro = () => {
     // Navigate to pricing page so users can choose their plan
@@ -77,14 +69,6 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
     e.preventDefault();
     e.stopPropagation();
     return false;
-  };
-
-  // Format likes count
-  const formatLikes = (count: number) => {
-    if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}k`;
-    }
-    return count.toString();
   };
 
   // Truncate prompt text to exactly 2 lines with ellipsis
@@ -145,13 +129,11 @@ export default function ArchiveCard({ sticker, index, onCopy }: ArchiveCardProps
 
         {/* Like Button - Top Right (clickable) */}
         <motion.button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleLike();
-          }}
+          onClick={handleLike}
+          disabled={isLoading}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 bg-black/60 backdrop-blur-sm rounded-full pointer-events-auto"
+          className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 bg-black/60 backdrop-blur-sm rounded-full pointer-events-auto disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ paddingTop: '3px', paddingBottom: '3px' }}
         >
           <Heart className={`w-3.5 h-3.5 ${liked ? 'text-red-500 fill-red-500' : 'text-white fill-white'}`} />

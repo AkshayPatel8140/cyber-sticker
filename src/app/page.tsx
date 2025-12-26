@@ -8,6 +8,7 @@ export interface Sticker {
   image_url: string;
   publish_date: string;
   is_premium: boolean;
+  likes?: number;
 }
 
 /**
@@ -39,7 +40,11 @@ async function getTodaySticker(): Promise<Sticker | null> {
       return null;
     }
 
-    return latestSticker || null;
+    // Map the data to include likes
+    return latestSticker ? {
+      ...latestSticker,
+      likes: latestSticker.likes || 0,
+    } : null;
   } catch (error) {
     console.error('Error in getTodaySticker:', error);
     return null;
@@ -61,7 +66,11 @@ async function getAllStickers(): Promise<Sticker[]> {
       return [];
     }
 
-    return data || [];
+    // Map the data to include likes
+    return (data || []).map(sticker => ({
+      ...sticker,
+      likes: sticker.likes || 0,
+    }));
   } catch (error) {
     console.error('Error in getAllStickers:', error);
     return [];
