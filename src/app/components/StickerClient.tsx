@@ -7,7 +7,7 @@ import HeroSection from './HeroSection';
 import ArchiveCard from './ArchiveCard';
 import Toast from './Toast';
 import ImageProtection from './ImageProtection';
-import type { Sticker } from '../page';
+import type { Sticker } from '@/lib/api/stickers';
 
 interface StickerClientProps {
   featuredSticker: Sticker | null;

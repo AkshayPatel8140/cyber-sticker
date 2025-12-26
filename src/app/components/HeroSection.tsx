@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { getStickerImageUrl } from '@/lib/image-url';
-import type { Sticker } from '../page';
+import type { Sticker } from '@/lib/api/stickers';
 
 interface HeroSectionProps {
   featuredSticker: Sticker | null;

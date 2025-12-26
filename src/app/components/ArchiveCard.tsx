@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getStickerImageUrl } from '@/lib/image-url';
 import { useLike } from '@/hooks/useLike';
-import type { Sticker } from '../page';
+import type { Sticker } from '@/lib/api/stickers';
 
 interface ArchiveCardProps {
   sticker: Sticker;

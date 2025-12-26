@@ -2,65 +2,14 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Lock, Star } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { getStickerById } from '@/lib/api/stickers';
+import type { Sticker } from '@/lib/api/stickers';
 import { getStickerImageUrl } from '@/lib/image-url';
 import { auth } from '@/auth';
 import { getUserSubscriptionPlan } from '@/lib/subscription';
 import Navbar from '../../components/Navbar';
 import CopyPromptButton from './CopyPromptButton';
 import LikeButton from './LikeButton';
-
-interface Sticker {
-  id: number;
-  title: string;
-  prompt: string;
-  image_url: string;
-  publish_date: string;
-  remix_idea?: string | null;
-  likes?: number;
-  is_premium?: boolean;
-}
-
-async function getStickerById(id: string): Promise<Sticker | null> {
-  try {
-    // Validate id is a number
-    const stickerId = parseInt(id);
-    if (isNaN(stickerId)) {
-      return null;
-    }
-
-    // Select all fields - remix_idea will be null if column doesn't exist
-    const { data, error } = await supabase
-      .from('stickers')
-      .select('*')
-      .eq('id', stickerId)
-      .single();
-
-    if (error) {
-      // PGRST116 means no rows found
-      if (error.code === 'PGRST116') {
-        return null;
-      }
-      console.error('Error fetching sticker:', JSON.stringify(error, null, 2));
-      return null;
-    }
-
-    // Map the data to our Sticker interface
-    return {
-      id: data.id,
-      title: data.title,
-      prompt: data.prompt,
-      image_url: data.image_url,
-      publish_date: data.publish_date,
-      remix_idea: data.remix_idea || null,
-      likes: data.likes || 0,
-      is_premium: data.is_premium || false,
-    };
-  } catch (error) {
-    console.error('Error in getStickerById:', error);
-    return null;
-  }
-}
 
 export default async function StickerDetailPage({
   params,
