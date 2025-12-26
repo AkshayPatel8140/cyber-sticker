@@ -2,20 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { supabase } from '@/lib/supabase';
+import { getUserProfile, type UserProfile } from '@/lib/api/profiles';
 
-export interface UserProfile {
-  id?: number;
-  user_id: string;
-  email: string | null;
-  display_name: string | null;
-  title: string | null;
-  bio: string | null;
-  avatar_url: string | null;
-  social_links: string[]; // stored as JSON array in Supabase
-  member_since: string | null;
-  last_updated_at: string | null;
-}
+// Re-export UserProfile for backward compatibility
+export type { UserProfile };
 
 interface UseUserProfileResult {
   profile: UserProfile | null;
@@ -42,17 +32,9 @@ export function useUserProfile(): UseUserProfileResult {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
+      const profileData = await getUserProfile(session.user.id);
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching user profile:', fetchError);
-        setError('Failed to load profile');
-        setProfile(null);
-      } else if (!data) {
+      if (!profileData) {
         // No profile yet, construct a default profile object (not saved until user edits)
         const defaultProfile: UserProfile = {
           user_id: session.user.id,
@@ -67,12 +49,7 @@ export function useUserProfile(): UseUserProfileResult {
         };
         setProfile(defaultProfile);
       } else {
-        setProfile({
-          ...data,
-          social_links: Array.isArray(data.social_links)
-            ? data.social_links
-            : [],
-        } as UserProfile);
+        setProfile(profileData);
       }
     } catch (err) {
       console.error('Unexpected error loading profile:', err);

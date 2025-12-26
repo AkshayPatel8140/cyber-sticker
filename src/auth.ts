@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { supabase } from '@/lib/supabase';
+import { upsertUserProfile } from '@/lib/api/profiles';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -39,20 +39,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               : null);
 
           // Upsert into user_profiles based on user_id
-          const { error } = await supabase
-            .from('user_profiles')
-            .upsert(
-              {
-                user_id: userId,
-                email,
-                display_name: name,
-                avatar_url: image,
-              },
-              { onConflict: 'user_id' }
-            );
+          const result = await upsertUserProfile(userId, {
+            email,
+            display_name: name,
+            avatar_url: image,
+          });
 
-          if (error) {
-            console.error('Error upserting user profile during auth:', error);
+          if (!result) {
+            console.error('Error upserting user profile during auth');
           }
 
           // Optional: attach access token for other uses

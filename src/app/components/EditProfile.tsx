@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { User, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import type { UserProfile } from '@/hooks/useUserProfile';
+import { upsertUserProfile } from '@/lib/api/profiles';
+import type { UserProfile } from '@/lib/api/profiles';
 
 interface EditProfileProps {
   user: {
@@ -48,8 +48,7 @@ export default function EditProfile({ user, profile, onCancel, onSave }: EditPro
 
     setIsSaving(true);
     try {
-      const payload = {
-        user_id: user.id,
+      const profileData = {
         email: user.email ?? null,
         display_name: displayName || null,
         title: title || null,
@@ -58,12 +57,9 @@ export default function EditProfile({ user, profile, onCancel, onSave }: EditPro
         social_links: socialLinks,
       };
 
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert(payload, { onConflict: 'user_id' });
+      const result = await upsertUserProfile(user.id, profileData);
 
-      if (error) {
-        console.error('Error saving profile:', error);
+      if (!result) {
         alert('Failed to save profile. Please try again.');
         return;
       }
